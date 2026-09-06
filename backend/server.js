@@ -4,8 +4,15 @@ const mysql = require('mysql2');
 require('dotenv').config();
 
 const app = express();
-app.use(cors());
+
+// CORS aur JSON middleware properly initialized
+app.use(cors({
+    origin: '*',
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+}));
 app.use(express.json());
+
 const db = mysql.createConnection({
     host: process.env.DB_HOST,
     user: process.env.DB_USER,
@@ -27,8 +34,8 @@ app.post('/api/signup', (req, res) => {
     const { name, email, password } = req.body;
     db.query("INSERT INTO users (name, email, password) VALUES (?, ?, ?)", [name, email, password], (err, result) => {
         if (err) {
-            console.log("❌ MySQL Signup Error:", err.message); // Yeh terminal me asli error print karega
-            return res.status(400).json({ error: err.message }); // Asli error browser ko bhejega
+            console.log("❌ MySQL Signup Error:", err.message);
+            return res.status(400).json({ error: err.message });
         }
         res.status(200).json({ message: "Signup successful", userId: result.insertId });
     });
@@ -76,16 +83,7 @@ app.get('/api/expenses/:sectionId', (req, res) => {
     });
 });
 
-// app.post('/api/expenses', (req, res) => {
-//     const { section_id, itemName, amount } = req.body;
-//     db.query("INSERT INTO expenses (section_id, itemName, amount) VALUES (?, ?, ?)", 
-//     [section_id, itemName, amount], (err, result) => {
-//         if (err) return res.status(500).json({ error: "DB error" });
-//         res.status(200).json({ message: "Expense added" });
-//     });
-// });
 app.post('/api/expenses', (req, res) => {
-    // Yahan expense_date add kiya gaya hai
     const { section_id, itemName, amount, expense_date } = req.body;
     db.query("INSERT INTO expenses (section_id, itemName, amount, expense_date) VALUES (?, ?, ?, ?)", 
     [section_id, itemName, amount, expense_date], (err, result) => {
@@ -101,7 +99,6 @@ app.delete('/api/expenses/:id', (req, res) => {
     });
 });
 
-// Expense Edit karne ke liye route
 app.put('/api/expenses/:id', (req, res) => {
     const { itemName, amount } = req.body;
     db.query("UPDATE expenses SET itemName = ?, amount = ? WHERE id = ?", [itemName, amount, req.params.id], (err) => {
