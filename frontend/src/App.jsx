@@ -38,7 +38,7 @@ function App() {
   const handleAuth = async (e) => {
     e.preventDefault();
     setAuthError('');
-    const url = isLoginView ? 'http://localhost:5001/api/login' : 'http://localhost:5001/api/signup';
+    const url = isLoginView ? 'https://smart-budget-system-d5li.onrender.com/api/login' : 'https://smart-budget-system-d5li.onrender.com:/api/signup';
     
     try {
       const response = await fetch(url, {
@@ -71,13 +71,13 @@ function App() {
   // --- DATA HANDLERS ---
   const fetchSections = async () => {
     if (!user) return;
-    const res = await fetch(`http://localhost:5001/api/sections/${user.id}/${currentMonth}`);
+    const res = await fetch(`https://smart-budget-system-d5li.onrender.com/api/sections/${user.id}/${currentMonth}`);
     const data = await res.json();
     setSections(data);
   };
 
   const fetchExpenses = async (sectionId) => {
-    const res = await fetch(`http://localhost:5001/api/expenses/${sectionId}`);
+    const res = await fetch(`https://smart-budget-system-d5li.onrender.com:5001/api/expenses/${sectionId}`);
     const data = await res.json();
     setExpenses(data);
   };
@@ -89,7 +89,7 @@ function App() {
   // --- ACTIONS ---
   const addSection = async (e) => {
     e.preventDefault();
-    await fetch('http://localhost:5001/api/sections', {
+    await fetch('https://smart-budget-system-d5li.onrender.com/api/sections', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ user_id: user.id, month_year: currentMonth, sectionName: newSection.name, totalBudget: newSection.budget })
     });
@@ -100,7 +100,7 @@ function App() {
   const deleteSection = async (id, e) => {
     e.stopPropagation();
     if(window.confirm("Folder delete karein?")) {
-      await fetch(`http://localhost:5001/api/sections/${id}`, { method: 'DELETE' });
+      await fetch(`https://smart-budget-system-d5li.onrender.com/api/sections/${id}`, { method: 'DELETE' });
       fetchSections();
     }
   };
@@ -111,7 +111,7 @@ function App() {
     // Calendar me select ki hui date ko format karke backend bhej rahe hain
     const formattedDate = selectedDate.toISOString().split('T')[0]; 
 
-    await fetch('http://localhost:5001/api/expenses', {
+    await fetch('https://smart-budget-system-d5li.onrender.com/api/expenses', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ 
         section_id: selectedSection.id, 
@@ -125,12 +125,12 @@ function App() {
   };
 
   const deleteExpense = async (id) => {
-    await fetch(`http://localhost:5001/api/expenses/${id}`, { method: 'DELETE' });
+    await fetch(`https://smart-budget-system-d5li.onrender.com/api/expenses/${id}`, { method: 'DELETE' });
     fetchExpenses(selectedSection.id);
   };
 
   const saveEdit = async (id) => {
-    await fetch(`http://localhost:5001/api/expenses/${id}`, {
+    await fetch(`https://smart-budget-system-d5li.onrender.com/api/expenses/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ itemName: editForm.name, amount: editForm.amount })
