@@ -1,0 +1,104 @@
+@import 'react-calendar/dist/Calendar.css';
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+:root {
+  --bg-color: #f3f4f6;
+  --text-dark: #111827;
+  --text-light: #6b7280;
+  --primary: #4f46e5;
+  --primary-hover: #4338ca;
+  --danger: #ef4444;
+  --success: #10b981;
+  --card-bg: rgba(255, 255, 255, 0.9);
+}
+
+* { box-sizing: border-box; font-family: 'Inter', sans-serif; }
+body { background-color: var(--bg-color); margin: 0; padding: 0; color: var(--text-dark); }
+
+/* Utility */
+.mb-2 { margin-bottom: 2rem; }
+.text-red { color: var(--danger); }
+.text-green { color: var(--success); }
+.font-bold { font-weight: 700; }
+.w-full { width: 100%; }
+
+/* Layout */
+.app-container { max-width: 900px; margin: 0 auto; padding: 2rem 1rem; }
+
+/* Auth Screen */
+.auth-container { display: flex; height: 100vh; justify-content: center; align-items: center; background: linear-gradient(135deg, #e0e7ff 0%, #f3f4f6 100%); }
+.auth-card { background: white; padding: 3rem; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); width: 100%; max-width: 400px; text-align: center; }
+.auth-card h2 { margin-top: 0; margin-bottom: 1.5rem; color: var(--text-dark); }
+ .auth-card input {
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 15px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 1rem;
+  background: #ffffff; /* Background ko ekdum white rakho */
+  color: #111827;       /* Text ka color dark rakho taaki likha hua saaf dikhe */
+  outline: none;
+  transition: 0.2s;
+}
+
+/* Input ke andar ke placeholder ka color */
+.auth-card input::placeholder {
+  color: #9ca3af;
+}
+.auth-card input:focus { border-color: var(--primary); background: white; }
+.toggle-auth { color: var(--primary); cursor: pointer; margin-top: 1rem; font-size: 0.9rem; font-weight: 500; }
+.error-msg { color: var(--danger); background: #fee2e2; padding: 10px; border-radius: 8px; font-size: 0.9rem; margin-bottom: 1rem; }
+
+/* Top Nav */
+.top-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
+.user-info h2 { margin: 0 0 5px 0; font-size: 1.8rem; }
+.month-selector { padding: 8px 12px; border-radius: 8px; border: 1px solid #d1d5db; font-size: 1rem; font-weight: 600; outline: none; background: white; cursor: pointer; }
+.logout-btn { background: #e5e7eb; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; color: var(--text-dark); transition: 0.2s; }
+.logout-btn:hover { background: #d1d5db; }
+
+/* Glass Cards */
+.glass-card { background: var(--card-bg); border-radius: 16px; padding: 24px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); border: 1px solid #ffffff; backdrop-filter: blur(10px); }
+.glass-card h3 { margin-top: 0; color: var(--text-dark); }
+
+/* Forms */
+.flex-form { display: flex; gap: 12px; flex-wrap: wrap; }
+.flex-form input { flex: 1; min-width: 200px; padding: 12px 16px; border: 1px solid #e5e7eb; border-radius: 8px; font-size: 1rem; outline: none; }
+.flex-form input:focus { border-color: var(--primary); }
+
+/* Buttons */
+button { border: none; font-family: inherit; }
+.primary-btn { padding: 12px 24px; background: var(--primary); color: white; border-radius: 8px; cursor: pointer; font-weight: 600; transition: 0.2s; }
+.primary-btn:hover { background: var(--primary-hover); }
+.danger-btn { padding: 12px 24px; background: var(--text-dark); color: white; border-radius: 8px; cursor: pointer; font-weight: 600; transition: 0.2s; }
+.danger-btn:hover { background: #000; }
+
+/* Grids & Budget Cards */
+.section-title { font-size: 1.5rem; margin-bottom: 1rem; }
+.grid-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; }
+.budget-card { cursor: pointer; position: relative; transition: transform 0.2s, box-shadow 0.2s; border: 1px solid transparent; }
+.budget-card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.06); border-color: var(--primary); }
+.budget-card h4 { margin: 0 0 10px 0; font-size: 1.2rem; color: var(--text-light); }
+.budget-card h2 { margin: 0; font-size: 2.2rem; color: var(--primary); }
+.label { margin: 5px 0 0 0; font-size: 0.85rem; color: var(--text-light); }
+
+/* Delete Buttons */
+.del-icon { position: absolute; top: 15px; right: 15px; background: #fee2e2; width: 35px; height: 35px; border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; opacity: 0; transition: 0.2s; }
+.budget-card:hover .del-icon { opacity: 1; }
+.del-icon:hover { background: var(--danger); color: white; }
+
+/* Expense Detail Screen */
+.back-btn { background: none; color: var(--text-light); font-weight: 600; font-size: 1rem; cursor: pointer; margin-bottom: 2rem; padding: 0; }
+.back-btn:hover { color: var(--text-dark); }
+.balance-board { display: flex; padding: 0; overflow: hidden; margin-bottom: 2rem; }
+.stat { flex: 1; text-align: center; padding: 25px; }
+.border-x { border-left: 1px solid #e5e7eb; border-right: 1px solid #e5e7eb; }
+.stat p { margin: 0 0 8px 0; color: var(--text-light); font-weight: 600; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; }
+.stat h3 { margin: 0; font-size: 2rem; }
+.expense-row { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid #f3f4f6; }
+.expense-row:last-child { border-bottom: none; }
+.exp-name { font-weight: 600; font-size: 1.1rem; }
+.exp-right { display: flex; align-items: center; gap: 20px; }
+.del-text-btn { background: #fee2e2; color: var(--danger); padding: 5px 12px; border-radius: 6px; cursor: pointer; font-weight: 600; transition: 0.2s; }
+.del-text-btn:hover { background: var(--danger); color: white; }
+.empty { color: var(--text-light); font-style: italic; }
