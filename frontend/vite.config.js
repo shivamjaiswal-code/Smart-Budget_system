@@ -3,5 +3,5 @@ import react from '@vitejs/plugin-react'
 
 export default defineConfig({
   plugins: [react()],
-  base: '/Smart-Budget_system/',
+  // base: '/Smart-Budget_system/', <-- Is line ko delete ya comment kar do!
 })
