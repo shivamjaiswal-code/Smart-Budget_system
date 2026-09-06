@@ -29,6 +29,11 @@ db.connect((err) => {
     console.log("🔥 Premium Database Connected!");
 });
 
+// --- ROOT ROUTE (Browser check ke liye) ---
+app.get('/', (req, res) => {
+    res.send('Smart Budget API is running successfully! 🚀');
+});
+
 // --- AUTHENTICATION (Signup & Login) ---
 app.post('/api/signup', (req, res) => {
     const { name, email, password } = req.body;
