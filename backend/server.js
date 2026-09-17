@@ -5,12 +5,12 @@ require('dotenv').config();
 
 const app = express();
 
-// CORS aur JSON middleware properly initialized
 app.use(cors({
-    origin: '*',
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
-    allowedHeaders: ['Content-Type', 'Authorization']
+    origin: "https://smart-budget-system.vercel.app", // Yeh URL rehna zaroori hai!
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    credentials: true
 }));
+
 app.use(express.json());
 
 const db = mysql.createConnection({
@@ -112,4 +112,6 @@ app.put('/api/expenses/:id', (req, res) => {
     });
 });
 
-app.listen(5001, () => console.log('🚀 Backend running on port 5001'));
+// Yahan Render ke liye port theek kar diya hai!
+const PORT = process.env.PORT || 5001;
+app.listen(PORT, () => console.log(`🚀 Backend running on port ${PORT}`));
