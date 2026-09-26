@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import Calendar from 'react-calendar'; // Calendar package import kiya
+import Calendar from 'react-calendar';
 import './App.css';
 
+// Live Render Backend URL
+const API_URL  = import.meta.env.VITE_API_URL;
+
 function App() {
-  // Global States (LocalStorage Auto-Login ke sath)
+  console.log("ASpi url",API_URL);
   const [user, setUser] = useState(() => {
     const savedUser = localStorage.getItem('smartbudget_user');
     return savedUser ? JSON.parse(savedUser) : null;
@@ -12,24 +15,18 @@ function App() {
   const [isLoginView, setIsLoginView] = useState(true);
   const [currentMonth, setCurrentMonth] = useState('August 2026');
   const [activeTab, setActiveTab] = useState('Monthly');
-  
-  // Naya state: Calendar ki date ke liye (default aaj ki date)
   const [selectedDate, setSelectedDate] = useState(new Date());
 
-  // Auth States
   const [authForm, setAuthForm] = useState({ name: '', email: '', password: '' });
   const [authError, setAuthError] = useState('');
 
-  // App States
   const [sections, setSections] = useState([]);
   const [selectedSection, setSelectedSection] = useState(null);
   const [expenses, setExpenses] = useState([]);
   
-  // Form States
   const [newSection, setNewSection] = useState({ name: '', budget: '' });
   const [newExpense, setNewExpense] = useState({ name: '', amount: '' });
 
-  // Edit & Delete Popup States
   const [editingExpense, setEditingExpense] = useState(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState(null);
   const [editForm, setEditForm] = useState({ name: '', amount: '' });
@@ -38,10 +35,10 @@ function App() {
   const handleAuth = async (e) => {
     e.preventDefault();
     setAuthError('');
-    const url = isLoginView ? 'https://smart-budget-system-d5li.onrender.com/api/login' : 'https://smart-budget-system-d5li.onrender.com:/api/signup';
+    const endpoint = isLoginView ? '/api/login' : '/api/signup';
     
     try {
-      const response = await fetch(url, {
+      const response = await fetch(`${API_URL}${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(authForm)
@@ -51,7 +48,7 @@ function App() {
       if (response.ok) {
         if (isLoginView) {
           setUser(data.user);
-          localStorage.setItem('smartbudget_user', JSON.stringify(data.user)); // Auto-login data save
+          localStorage.setItem('smartbudget_user', JSON.stringify(data.user));
         } else {
           alert("Account ban gaya! Ab login karein.");
           setIsLoginView(true);
@@ -65,21 +62,25 @@ function App() {
   const logout = () => { 
     setUser(null); 
     setSelectedSection(null); 
-    localStorage.removeItem('smartbudget_user'); // Auto-login data delete
+    localStorage.removeItem('smartbudget_user');
   };
 
   // --- DATA HANDLERS ---
   const fetchSections = async () => {
     if (!user) return;
-    const res = await fetch(`https://smart-budget-system-d5li.onrender.com/api/sections/${user.id}/${currentMonth}`);
-    const data = await res.json();
-    setSections(data);
+    try {
+      const res = await fetch(`${API_URL}/api/sections/${user.id}/${currentMonth}`);
+      const data = await res.json();
+      setSections(data);
+    } catch (err) { console.error("Error fetching sections:", err); }
   };
 
   const fetchExpenses = async (sectionId) => {
-    const res = await fetch(`https://smart-budget-system-d5li.onrender.com:5001/api/expenses/${sectionId}`);
-    const data = await res.json();
-    setExpenses(data);
+    try {
+      const res = await fetch(`${API_URL}/api/expenses/${sectionId}`);
+      const data = await res.json();
+      setExpenses(data);
+    } catch (err) { console.error("Error fetching expenses:", err); }
   };
 
   useEffect(() => {
@@ -89,7 +90,7 @@ function App() {
   // --- ACTIONS ---
   const addSection = async (e) => {
     e.preventDefault();
-    await fetch('https://smart-budget-system-d5li.onrender.com/api/sections', {
+    await fetch(`${API_URL}/api/sections`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ user_id: user.id, month_year: currentMonth, sectionName: newSection.name, totalBudget: newSection.budget })
     });
@@ -100,24 +101,22 @@ function App() {
   const deleteSection = async (id, e) => {
     e.stopPropagation();
     if(window.confirm("Folder delete karein?")) {
-      await fetch(`https://smart-budget-system-d5li.onrender.com/api/sections/${id}`, { method: 'DELETE' });
+      await fetch(`${API_URL}/api/sections/${id}`, { method: 'DELETE' });
       fetchSections();
     }
   };
 
   const addExpense = async (e) => {
     e.preventDefault();
-    
-    // Calendar me select ki hui date ko format karke backend bhej rahe hain
     const formattedDate = selectedDate.toISOString().split('T')[0]; 
 
-    await fetch('https://smart-budget-system-d5li.onrender.com/api/expenses', {
+    await fetch(`${API_URL}/api/expenses`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ 
         section_id: selectedSection.id, 
         itemName: newExpense.name, 
         amount: newExpense.amount,
-        expense_date: formattedDate // Naya field backend ko bhej diya
+        expense_date: formattedDate
       })
     });
     setNewExpense({ name: '', amount: '' });
@@ -125,12 +124,12 @@ function App() {
   };
 
   const deleteExpense = async (id) => {
-    await fetch(`https://smart-budget-system-d5li.onrender.com/api/expenses/${id}`, { method: 'DELETE' });
+    await fetch(`${API_URL}/api/expenses/${id}`, { method: 'DELETE' });
     fetchExpenses(selectedSection.id);
   };
 
   const saveEdit = async (id) => {
-    await fetch(`https://smart-budget-system-d5li.onrender.com/api/expenses/${id}`, {
+    await fetch(`${API_URL}/api/expenses/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ itemName: editForm.name, amount: editForm.amount })
@@ -192,7 +191,6 @@ function App() {
           ))}
         </div>
 
-        {/* --- MONTHLY TAB --- */}
         {activeTab === 'Monthly' && (
           <>
             <div className="glass-card mb-2">
@@ -218,7 +216,6 @@ function App() {
           </>
         )}
 
-        {/* --- CALENDAR TAB --- */}
         {activeTab === 'Calendar' && (
           <div className="glass-card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '20px' }}>
             <h3 style={{ marginBottom: '15px' }}>📅 Select Date for Expenses</h3>
