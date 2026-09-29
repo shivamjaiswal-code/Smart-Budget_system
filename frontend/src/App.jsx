@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import Calendar from 'react-calendar';
 import './App.css';
 
-// 100% Correct Live URL (l1 ke sath)
 const API_URL = 'https://smart-budget-system-d5l1.onrender.com';
 
 function App() {
@@ -18,8 +17,8 @@ function App() {
   const [isLoginView, setIsLoginView] = useState(true);
   
   // App Navigation States
-  const [bottomNav, setBottomNav] = useState('Trans'); // Naya Bottom Navigation (Trans, Stats, Accounts, More)
-  const [activeTab, setActiveTab] = useState('Monthly'); // Upar wale tabs
+  const [bottomNav, setBottomNav] = useState('Trans'); 
+  const [activeTab, setActiveTab] = useState('Monthly'); 
   
   const [currentMonth, setCurrentMonth] = useState('Sep 2026');
   const [showMonthPicker, setShowMonthPicker] = useState(false);
@@ -35,28 +34,48 @@ function App() {
   
   const [allMonthExpenses, setAllMonthExpenses] = useState([]);
   const [calendarSelectedFolder, setCalendarSelectedFolder] = useState(null);
+  const [statsSelectedFolder, setStatsSelectedFolder] = useState(null); // Graph ke liye
   
   const [newSection, setNewSection] = useState({ name: '', budget: '' });
   const [newExpense, setNewExpense] = useState({ name: '', amount: '' });
 
-  // Edit Folder States
   const [editingFolderId, setEditingFolderId] = useState(null);
   const [editFolderForm, setEditFolderForm] = useState({ name: '', budget: '' });
+
+  // Naye Features State
+  const [language, setLanguage] = useState('hi'); // 'en' ya 'hi'
+  const [showProfile, setShowProfile] = useState(false);
+
+  // --- TRANSLATIONS DICTIONARY ---
+  const t = {
+    hi: {
+      trans: "Len-Den", stats: "Graphs", acc: "Khate", more: "Aur",
+      daily: "Rozana", cal: "Calendar", month: "Mahina", total: "Kul",
+      budget: "Total Budget", spent: "Kharcha", left: "Bacha Hua",
+      addBtn: "+ Naya Folder Banao", addExp: "+ Kharcha Jodein",
+      noData: "Koi data nahi hai.", profile: "Meri Profile", logout: "Log Out"
+    },
+    en: {
+      trans: "Trans.", stats: "Stats", acc: "Accounts", more: "More",
+      daily: "Daily", cal: "Calendar", month: "Monthly", total: "Total",
+      budget: "Total Budget", spent: "Spent", left: "Remaining",
+      addBtn: "+ Create Folder", addExp: "+ Add Expense",
+      noData: "No data available.", profile: "My Profile", logout: "Logout"
+    }
+  };
+  const lang = t[language];
 
   // --- AUTHENTICATION ---
   const handleAuth = async (e) => {
     e.preventDefault();
     setAuthError('');
     const endpoint = isLoginView ? '/api/login' : '/api/signup';
-    
     try {
       const response = await fetch(`${API_URL}${endpoint}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        method: 'POST', headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
         body: JSON.stringify(authForm)
       });
       const data = await response.json();
-      
       if (response.ok) {
         if (isLoginView) {
           setUser(data.user);
@@ -68,15 +87,12 @@ function App() {
       } else {
         setAuthError(data.error || "Galat details");
       }
-    } catch (err) {
-      console.error("Auth fetch error:", err);
-      setAuthError("Server se connect nahi hua.");
-    }
+    } catch (err) { setAuthError("Server se connect nahi hua."); }
   };
 
   const logout = () => { 
-    setUser(null); setSelectedSection(null); setCalendarSelectedFolder(null);
-    localStorage.removeItem('smartbudget_user');
+    setUser(null); setSelectedSection(null); setCalendarSelectedFolder(null); setStatsSelectedFolder(null);
+    localStorage.removeItem('smartbudget_user'); setShowProfile(false);
   };
 
   // --- DATA FETCHING ---
@@ -101,7 +117,7 @@ function App() {
         const data = await res.json();
         setAllMonthExpenses(Array.isArray(data) ? data : []);
       }
-    } catch (err) { console.error("Error fetching all month expenses:", err); }
+    } catch (err) { console.error("Error fetching expenses:", err); }
   };
 
   const fetchExpenses = async (sectionId) => {
@@ -118,6 +134,7 @@ function App() {
     if (user && user.id) {
       fetchSections();
       fetchAllMonthExpenses();
+      setStatsSelectedFolder(null); // Reset stats view on month change
     }
   }, [user, currentMonth]);
 
@@ -168,15 +185,13 @@ function App() {
     const folder = sections.find(s => s.id === folderId);
     const budget = folder ? Number(folder.totalBudget) : 0;
     const kharch = allMonthExpenses.filter(exp => {
-      if (exp.section_id !== folderId || !exp.expense_date) return false;
-      const expDate = new Date(exp.expense_date);
-      const selDate = new Date(selectedDate);
-      expDate.setHours(0,0,0,0); selDate.setHours(0,0,0,0);
-      return expDate <= selDate;
+      if (exp.section_id !== folderId) return false;
+      return true; // Graph ke liye poore mahine ka dekhenge
     }).reduce((sum, exp) => sum + Number(exp.amount), 0);
     return { budget, kharch, bacha: budget - kharch };
   };
 
+  // --- VIEWS ---
   if (!user) {
     return (
       <div className="auth-container">
@@ -197,7 +212,7 @@ function App() {
     );
   }
 
-  // Kharcha Add karne wali screen (Inside Folder)
+  // Kharcha Add Screen
   if (selectedSection && activeTab === 'Monthly' && bottomNav === 'Trans') {
     const totalExp = expenses.reduce((sum, item) => sum + Number(item.amount), 0);
     const remaining = selectedSection.totalBudget - totalExp;
@@ -205,17 +220,17 @@ function App() {
       <div className="app-container" style={{ paddingBottom: '80px' }}>
         <button className="back-btn" onClick={() => setSelectedSection(null)}>← Back</button>
         <div className="glass-card balance-board">
-          <div className="stat"><p>Total Budget</p><h3>₹{selectedSection.totalBudget}</h3></div>
-          <div className="stat border-x"><p>Total Kharcha</p><h3 className="text-red">₹{totalExp}</h3></div>
-          <div className="stat"><p>Bacha Hua</p><h3 className={remaining < 0 ? "text-red" : "text-green"}>₹{remaining}</h3></div>
+          <div className="stat"><p>{lang.budget}</p><h3>₹{selectedSection.totalBudget}</h3></div>
+          <div className="stat border-x"><p>{lang.spent}</p><h3 className="text-red">₹{totalExp}</h3></div>
+          <div className="stat"><p>{lang.left}</p><h3 className={remaining < 0 ? "text-red" : "text-green"}>₹{remaining}</h3></div>
         </div>
         <div className="glass-card mb-2">
-          <h3>Add Kharcha ({selectedSection.sectionName})</h3>
+          <h3>{lang.addExp} ({selectedSection.sectionName})</h3>
           <p style={{ fontSize: '12px', color: '#ff4757', marginBottom: '10px' }}>Date: {selectedDate.toDateString()}</p>
           <form className="flex-form" onSubmit={addExpense}>
-            <input type="text" placeholder="Kya kharida?" value={newExpense.name} onChange={e => setNewExpense({ ...newExpense, name: e.target.value })} required />
+            <input type="text" placeholder="Item name?" value={newExpense.name} onChange={e => setNewExpense({ ...newExpense, name: e.target.value })} required />
             <input type="number" placeholder="Amount (₹)" value={newExpense.amount} onChange={e => setNewExpense({ ...newExpense, amount: e.target.value })} required />
-            <button type="submit" className="danger-btn">+ Add Kharcha</button>
+            <button type="submit" className="danger-btn">{lang.addExp}</button>
           </form>
         </div>
       </div>
@@ -225,13 +240,18 @@ function App() {
   const monthsList = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
   return (
-    // paddingBottom diya hai taaki content bottom bar ke peeche na chhupe
     <div className="app-container" style={{ paddingBottom: '90px', minHeight: '100vh', position: 'relative' }}>
       
-      {/* HEADER (Sirf Trans aur Stats me dikhayenge) */}
+      {/* HEADER WITH PROFILE AVATAR */}
       <header className="top-nav" style={{flexDirection: 'column', alignItems: 'flex-start'}}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
           <h2>Hi, {user.name}! 💰</h2>
+          <div 
+            onClick={() => setShowProfile(true)}
+            style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#4facfe', color: '#fff', display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '20px', cursor: 'pointer', fontWeight: 'bold' }}
+          >
+            {user.name.charAt(0).toUpperCase()}
+          </div>
         </div>
         <button 
           onClick={() => setShowMonthPicker(true)} 
@@ -268,10 +288,9 @@ function App() {
 
       {/* ================= MAIN CONTENT AREA ================= */}
 
-      {/* 1. TRANS TAB (Jisme purane saare tabs rahenge) */}
+      {/* 1. TRANS TAB */}
       {bottomNav === 'Trans' && (
         <>
-          {/* Upar Wale Tabs (Daily, Calendar, Monthly, Total) */}
           <div className="tabs-container" style={{ display: 'flex', justifyContent: 'space-around', background: '#1a1a1a', padding: '10px', borderRadius: '8px', margin: '15px 0' }}>
             {['Daily', 'Calendar', 'Monthly', 'Total'].map(tab => (
               <button 
@@ -282,7 +301,7 @@ function App() {
                   borderBottom: activeTab === tab ? '2px solid #ff4757' : 'none', paddingBottom: '5px'
                 }}
               >
-                {tab}
+                {lang[tab.toLowerCase()]}
               </button>
             ))}
           </div>
@@ -291,13 +310,13 @@ function App() {
             <div className="glass-card" style={{ padding: 0, position: 'relative', minHeight: '400px', overflow: 'hidden', background: '#1a1a1a' }}>
               <div style={{ display: 'flex', justifyContent: 'space-around', padding: '15px', borderBottom: '1px solid #333' }}>
                 <div style={{ textAlign: 'center' }}><p style={{ color: '#aaa', fontSize: '12px', margin: '0 0 5px 0' }}>Income</p><p style={{ color: '#4facfe', margin: 0, fontWeight: 'bold' }}>0.00</p></div>
-                <div style={{ textAlign: 'center' }}><p style={{ color: '#aaa', fontSize: '12px', margin: '0 0 5px 0' }}>Expenses</p><p style={{ color: '#ff4757', margin: 0, fontWeight: 'bold' }}>{allMonthExpenses.reduce((sum, exp) => sum + Number(exp.amount), 0).toFixed(2)}</p></div>
+                <div style={{ textAlign: 'center' }}><p style={{ color: '#aaa', fontSize: '12px', margin: '0 0 5px 0' }}>{lang.spent}</p><p style={{ color: '#ff4757', margin: 0, fontWeight: 'bold' }}>{allMonthExpenses.reduce((sum, exp) => sum + Number(exp.amount), 0).toFixed(2)}</p></div>
                 <div style={{ textAlign: 'center' }}><p style={{ color: '#aaa', fontSize: '12px', margin: '0 0 5px 0' }}>Total</p><p style={{ color: '#fff', margin: 0, fontWeight: 'bold' }}>{(0 - allMonthExpenses.reduce((sum, exp) => sum + Number(exp.amount), 0)).toFixed(2)}</p></div>
               </div>
               {allMonthExpenses.length === 0 ? (
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '250px', color: '#666' }}>
                   <div style={{ fontSize: '50px', opacity: 0.6 }}>🐱</div>
-                  <p style={{ marginTop: '10px', fontSize: '14px' }}>No data available.</p>
+                  <p style={{ marginTop: '10px', fontSize: '14px' }}>{lang.noData}</p>
                 </div>
               ) : (
                 <div style={{ padding: '15px', maxHeight: '250px', overflowY: 'auto' }}>
@@ -314,11 +333,11 @@ function App() {
           {activeTab === 'Monthly' && (
             <>
               <div className="glass-card mb-2">
-                <h3>Naya Budget Folder Banao</h3>
+                <h3>{lang.addBtn}</h3>
                 <form className="flex-form" onSubmit={addSection}>
                   <input type="text" placeholder="Folder Name" value={newSection.name} onChange={e => setNewSection({ ...newSection, name: e.target.value })} required />
                   <input type="number" placeholder="Budget (₹)" value={newSection.budget} onChange={e => setNewSection({ ...newSection, budget: e.target.value })} required />
-                  <button type="submit" className="primary-btn">+ Create</button>
+                  <button type="submit" className="primary-btn">{lang.addBtn}</button>
                 </form>
               </div>
               <div className="grid-container">
@@ -329,7 +348,7 @@ function App() {
                       <button className="edit-icon" onClick={(e) => { e.stopPropagation(); setEditingFolderId(sec.id); setEditFolderForm({ name: sec.sectionName, budget: sec.totalBudget }); }} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '16px' }}>✏️</button>
                     </div>
                     <div onClick={() => { setSelectedSection(sec); fetchExpenses(sec.id); }} style={{ cursor: 'pointer' }}>
-                      <h4>{sec.sectionName}</h4><h2>₹{sec.totalBudget}</h2><p className="label">Total Budget</p>
+                      <h4>{sec.sectionName}</h4><h2>₹{sec.totalBudget}</h2><p className="label">{lang.budget}</p>
                     </div>
                   </div>
                 ))}
@@ -358,8 +377,8 @@ function App() {
                     return (
                       <div style={{ marginTop: '15px' }}>
                         <p style={{color: '#aaa', margin: '5px 0'}}>Budget: <strong style={{color: '#4facfe'}}>₹{stats.budget}</strong></p>
-                        <p style={{color: '#aaa', margin: '5px 0'}}>Kharch: <strong style={{color: '#ff4757'}}>₹{stats.kharch}</strong></p>
-                        <p style={{color: '#fff', margin: '10px 0'}}>Bacha: <strong style={{color: stats.bacha < 0 ? '#ff4757' : '#2ed573'}}>₹{stats.bacha}</strong></p>
+                        <p style={{color: '#aaa', margin: '5px 0'}}>{lang.spent}: <strong style={{color: '#ff4757'}}>₹{stats.kharch}</strong></p>
+                        <p style={{color: '#fff', margin: '10px 0'}}>{lang.left}: <strong style={{color: stats.bacha < 0 ? '#ff4757' : '#2ed573'}}>₹{stats.bacha}</strong></p>
                       </div>
                     );
                   })()}
@@ -372,25 +391,65 @@ function App() {
             <div className="glass-card" style={{ textAlign: 'center', minHeight: '300px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
               <div style={{ fontSize: '50px', marginBottom: '15px' }}>📊</div>
               <h3 style={{ color: '#fff' }}>Yearly Summary</h3>
-              <p style={{ color: '#888', fontSize: '14px' }}>Data analytics soon!</p>
+              <p style={{ color: '#888', fontSize: '14px' }}>Data analytics coming soon!</p>
             </div>
           )}
-
-          {/* Floating + Button (Sirf Trans screen par dikhega) */}
+          
           <button onClick={() => setActiveTab('Monthly')} style={{
             position: 'fixed', bottom: '90px', right: '20px', width: '60px', height: '60px', borderRadius: '50%',
-            backgroundColor: '#ff4757', color: 'white', border: 'none', fontSize: '28px', cursor: 'pointer',
-            boxShadow: '0 4px 12px rgba(255, 71, 87, 0.4)', zIndex: 100
+            backgroundColor: '#ff4757', color: 'white', border: 'none', fontSize: '28px', cursor: 'pointer', zIndex: 100
           }}>+</button>
         </>
       )}
 
-      {/* 2. STATS TAB */}
+      {/* 2. FUNCTIONAL STATS TAB (Graph View) */}
       {bottomNav === 'Stats' && (
-        <div className="glass-card" style={{ textAlign: 'center', minHeight: '400px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-          <div style={{ fontSize: '60px' }}>📈</div>
-          <h2 style={{ color: '#fff', margin: '15px 0' }}>Statistics</h2>
-          <p style={{ color: '#888' }}>Yahan tumhare kharche ka Pie Chart aayega!</p>
+        <div className="glass-card" style={{ padding: '20px', minHeight: '400px' }}>
+          <h2 style={{ color: '#fff', marginBottom: '15px', textAlign: 'center' }}>📊 {lang.stats} ({currentMonth})</h2>
+          
+          {!statsSelectedFolder ? (
+             <div>
+               <p style={{ color: '#888', textAlign: 'center', marginBottom: '15px', fontSize: '14px' }}>Graph dekhne ke liye folder select karein:</p>
+               <div className="grid-container">
+                 {sections.length === 0 ? <p className="empty" style={{gridColumn: '1/-1'}}>{lang.noData}</p> : null}
+                 {sections.map(sec => (
+                   <div key={sec.id} className="budget-card glass-card" onClick={() => setStatsSelectedFolder(sec)}>
+                     <h4>{sec.sectionName}</h4>
+                   </div>
+                 ))}
+               </div>
+             </div>
+          ) : (
+             <div style={{ background: '#111', padding: '20px', borderRadius: '10px', border: '1px solid #333' }}>
+                <button onClick={() => setStatsSelectedFolder(null)} style={{ background: 'transparent', color: '#888', border: 'none', cursor: 'pointer', marginBottom: '15px' }}>← Back</button>
+                <h3 style={{ color: '#fff', textAlign: 'center', marginBottom: '20px' }}>{statsSelectedFolder.sectionName} Graph</h3>
+                
+                {(() => {
+                   const stats = getStatsUpToDate(statsSelectedFolder.id);
+                   let percent = (stats.kharch / stats.budget) * 100;
+                   if (percent > 100) percent = 100;
+                   const barColor = percent > 90 ? '#ff4757' : (percent > 70 ? '#ffa502' : '#2ed573');
+                   
+                   return (
+                     <div>
+                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
+                         <span style={{ color: '#aaa', fontSize: '14px' }}>{lang.spent}: ₹{stats.kharch}</span>
+                         <span style={{ color: '#aaa', fontSize: '14px' }}>{lang.budget}: ₹{stats.budget}</span>
+                       </div>
+                       
+                       {/* Visual Progress Bar (Graph) */}
+                       <div style={{ width: '100%', height: '20px', background: '#333', borderRadius: '10px', overflow: 'hidden', marginBottom: '20px' }}>
+                         <div style={{ width: `${percent}%`, height: '100%', background: barColor, transition: 'width 0.5s ease-in-out' }}></div>
+                       </div>
+                       
+                       <p style={{ textAlign: 'center', color: stats.bacha < 0 ? '#ff4757' : '#fff' }}>
+                         {stats.bacha < 0 ? 'Over Budget!' : `${lang.left}: ₹${stats.bacha}`}
+                       </p>
+                     </div>
+                   );
+                })()}
+             </div>
+          )}
         </div>
       )}
 
@@ -398,70 +457,57 @@ function App() {
       {bottomNav === 'Accounts' && (
         <div className="glass-card" style={{ textAlign: 'center', minHeight: '400px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
           <div style={{ fontSize: '60px' }}>💳</div>
-          <h2 style={{ color: '#fff', margin: '15px 0' }}>My Accounts</h2>
+          <h2 style={{ color: '#fff', margin: '15px 0' }}>{lang.acc}</h2>
           <p style={{ color: '#888' }}>Bank ya Cash balance manage karne ki jagah.</p>
         </div>
       )}
 
-      {/* 4. MORE TAB */}
+      {/* 4. SETTINGS & MORE TAB */}
       {bottomNav === 'More' && (
         <div className="glass-card" style={{ padding: '20px' }}>
-          <h2 style={{ color: '#fff', marginBottom: '20px' }}>Settings & More</h2>
+          <h2 style={{ color: '#fff', marginBottom: '20px' }}>⚙️ Settings & {lang.more}</h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+            <button className="secondary-btn" onClick={() => setLanguage(language === 'hi' ? 'en' : 'hi')} style={{ background: '#222', border: '1px solid #4facfe', color: '#4facfe' }}>
+              🌐 Change Language ({language === 'hi' ? 'English' : 'Hindi'})
+            </button>
             <button className="secondary-btn">⬇️ Export to Excel</button>
-            <button className="secondary-btn">🌐 Change Language</button>
-            <button onClick={logout} className="danger-btn" style={{marginTop: '20px'}}>🚪 Logout</button>
+            <button onClick={logout} className="danger-btn" style={{marginTop: '20px'}}>🚪 {lang.logout}</button>
           </div>
         </div>
       )}
 
-      {/* ================= FIXED BOTTOM NAVIGATION ================= */}
+      {/* PROFILE POP-UP MODAL */}
+      {showProfile && (
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.8)', zIndex: 3000, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+          <div className="glass-card" style={{ width: '90%', maxWidth: '320px', padding: '30px', background: '#1a1a1a', border: '1px solid #4facfe', textAlign: 'center' }}>
+            <div style={{ width: '80px', height: '80px', borderRadius: '50%', background: '#4facfe', color: '#fff', display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '40px', fontWeight: 'bold', margin: '0 auto 15px auto' }}>
+              {user.name.charAt(0).toUpperCase()}
+            </div>
+            <h2 style={{ color: '#fff', margin: '0 0 5px 0' }}>{user.name}</h2>
+            <p style={{ color: '#888', margin: '0 0 20px 0', fontSize: '14px' }}>{user.email}</p>
+            <button className="secondary-btn" style={{ width: '100%', marginBottom: '10px' }}>📷 Change Photo (Coming Soon)</button>
+            <button onClick={() => setShowProfile(false)} className="primary-btn" style={{ width: '100%' }}>Close</button>
+          </div>
+        </div>
+      )}
+
+      {/* BOTTOM NAVIGATION */}
       <div style={{
         position: 'fixed', bottom: 0, left: 0, width: '100%', height: '70px',
-        backgroundColor: '#151515', borderTop: '1px solid #2a2a2a',
-        display: 'flex', justifyContent: 'space-around', alignItems: 'center',
-        zIndex: 999, paddingBottom: 'env(safe-area-inset-bottom)'
+        backgroundColor: '#151515', borderTop: '1px solid #2a2a2a', display: 'flex', justifyContent: 'space-around', alignItems: 'center', zIndex: 999
       }}>
         {[
-          { id: 'Trans', icon: '🧾', label: 'Trans.' },
-          { id: 'Stats', icon: '📊', label: 'Stats' },
-          { id: 'Accounts', icon: '💳', label: 'Accounts' },
-          { id: 'More', icon: '⋯', label: 'More' }
+          { id: 'Trans', icon: '🧾', label: lang.trans },
+          { id: 'Stats', icon: '📊', label: lang.stats },
+          { id: 'Accounts', icon: '💳', label: lang.acc },
+          { id: 'More', icon: '⋯', label: lang.more }
         ].map(item => (
-          <div 
-            key={item.id} 
-            onClick={() => setBottomNav(item.id)}
-            style={{ 
-              display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer', width: '25%',
-              color: bottomNav === item.id ? '#ff4757' : '#888'
-            }}
-          >
-            <span style={{ fontSize: '20px', marginBottom: '4px', filter: bottomNav === item.id ? 'none' : 'grayscale(100%)' }}>
-              {item.icon}
-            </span>
-            <span style={{ fontSize: '11px', fontWeight: bottomNav === item.id ? 'bold' : 'normal' }}>
-              {item.label}
-            </span>
+          <div key={item.id} onClick={() => setBottomNav(item.id)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer', width: '25%', color: bottomNav === item.id ? '#ff4757' : '#888' }}>
+            <span style={{ fontSize: '20px', marginBottom: '4px', filter: bottomNav === item.id ? 'none' : 'grayscale(100%)' }}>{item.icon}</span>
+            <span style={{ fontSize: '11px', fontWeight: bottomNav === item.id ? 'bold' : 'normal' }}>{item.label}</span>
           </div>
         ))}
       </div>
-
-      {/* EDIT POPUP */}
-      {editingFolderId && (
-        <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', background: 'rgba(0,0,0,0.8)', zIndex: 2000, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-          <div className="glass-card" style={{ width: '90%', maxWidth: '350px', padding: '20px', background: '#1a1a1a', border: '1px solid #444' }}>
-            <h3 style={{ color: '#fff', marginBottom: '15px' }}>Edit Folder</h3>
-            <form className="flex-form" onSubmit={saveFolderEdit} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-              <input type="text" value={editFolderForm.name} onChange={e => setEditFolderForm({ ...editFolderForm, name: e.target.value })} required />
-              <input type="number" value={editFolderForm.budget} onChange={e => setEditFolderForm({ ...editFolderForm, budget: e.target.value })} required />
-              <div style={{ display: 'flex', gap: '10px' }}>
-                <button type="submit" className="primary-btn" style={{ flex: 1 }}>Save</button>
-                <button type="button" className="secondary-btn" onClick={() => setEditingFolderId(null)} style={{ flex: 1 }}>Cancel</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
