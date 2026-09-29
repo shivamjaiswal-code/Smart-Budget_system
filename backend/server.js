@@ -132,6 +132,22 @@ app.put('/api/expenses/:id', (req, res) => {
     });
 });
 
+
+// --- ALL EXPENSES FOR CALENDAR VIEW ---
+app.get('/api/all-expenses/:userId/:monthYear', (req, res) => {
+    const { userId, monthYear } = req.params;
+    const query = `
+        SELECT e.* FROM expenses e 
+        JOIN sections s ON e.section_id = s.id 
+        WHERE s.user_id = ? AND s.month_year = ?
+    `;
+    db.query(query, [userId, monthYear], (err, results) => {
+        if (err) return res.status(500).json({ error: "DB error" });
+        res.status(200).json(results);
+    });
+});
+
+// for calender logic
 // Yahan Render ke liye port theek kar diya hai!
 const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => console.log(`🚀 Backend running on port ${PORT}`));
