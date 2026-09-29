@@ -11,12 +11,24 @@ const app = express();
 //     credentials: true
 // }));
 
+const allowedOrigins = [
+    "https://smart-budget-system.vercel.app", 
+    "http://localhost:5173", 
+    "http://localhost:5174"
+];
+
 app.use(cors({
-    origin: "https://smart-budget-system.vercel.app", // Dekho, aakhri me koi '/' nahi hai
+    origin: function (origin, callback) {
+        // Allow requests with no origin OR from our allowed origins list
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            callback(new Error('CORS blocked this request'));
+        }
+    },
     methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true
 }));
-// new vercel ka limk dala hai
 
 
 app.use(express.json());
