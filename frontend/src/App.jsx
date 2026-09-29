@@ -3,8 +3,7 @@ import Calendar from 'react-calendar';
 import './App.css';
 
 // Exact Live Backend URL (no trailing slash)
-const API_URL = 'https://smart-budget-system-d5li.onrender.com';
-
+const API_URL = 'https://smart-budget-system-d5l1.onrender.com';
 function App() {
   const [user, setUser] = useState(() => {
     try {
