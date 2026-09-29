@@ -5,11 +5,19 @@ require('dotenv').config();
 
 const app = express();
 
+// app.use(cors({
+//     origin: "http://localhost:5173", // Yahan Vercel ka naam-o-nishan nahi hona chahiye!
+//     methods: ["GET", "POST", "PUT", "DELETE"],
+//     credentials: true
+// }));
+
 app.use(cors({
-    origin: "https://smart-budget-system.vercel.app", // Yeh URL rehna zaroori hai!
+    origin: "https://smart-budget-system.vercel.app", // Dekho, aakhri me koi '/' nahi hai
     methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true
 }));
+// new vercel ka limk dala hai
+
 
 app.use(express.json());
 
@@ -87,6 +95,18 @@ app.get('/api/expenses/:sectionId', (req, res) => {
         res.status(200).json(results);
     });
 });
+
+// --- Edit Folder (Budget & Name) ---
+app.put('/api/sections/:id', (req, res) => {
+    const { sectionName, totalBudget } = req.body;
+    db.query("UPDATE sections SET sectionName = ?, totalBudget = ? WHERE id = ?", 
+    [sectionName, totalBudget, req.params.id], (err) => {
+        if (err) return res.status(500).json({ error: "DB error" });
+        res.status(200).json({ message: "Folder updated successfully" });
+    });
+});
+
+// new add kiya for app.put ko for total budgetedit ho jaye
 
 app.post('/api/expenses', (req, res) => {
     const { section_id, itemName, amount, expense_date } = req.body;
